@@ -2,22 +2,12 @@ import Layout from './Layout'
 import Home from './Home'
 import NewPost from './NewPost'
 import PostPage from './PostPage'
-import EditPost from './EditPost'
 import About from './About'
 import Missing from './Missing'
-
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { format } from 'date-fns'
 import './index.css'
-
-import { useEffect } from 'react'
-import useAxiosFetch from './hooks/useAxiosFetch'
-import { useStoreActions } from 'easy-peasy'
-
-/*
-自定義 Hook，可在 javaScript 函數中調用
-．命名必須要以 use 開頭，加上 export 分享給其它組件使用
-．不能用在迴圈、條件判斷或子函數中調用
-*/
 
 /*
 Router v6 路由
@@ -25,53 +15,106 @@ npm i react-router-dom@6
 
 date-fns 日期格式轉換
 npm install date-fns --save
-
-JSON Server 服務器
-npm install json-server -g
-json-server --port 3500 --watch data/db3.json
-
-Easy Peasy v5 十分簡單狀態管理
-npm install easy-peasy
 */
 
 function App () {
-
-  // 使用狀態管理的動作
-  const setPosts = useStoreActions((actions) => actions.setPosts)
-
-  const { data, fetchError, isLoading } = useAxiosFetch('http://localhost:3500/posts')
-
-  // 使用監聽效應
+  // 文章數據
+  const [posts, setPosts] = useState([
+    {
+      id: 1,
+      title: "我的第一篇文章",
+      datetime: "July 01, 2021 11:17:36 AM",
+      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
+    },
+    {
+      id: 2,
+      title: "我的第二篇文章",
+      datetime: "July 01, 2021 11:17:36 AM",
+      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
+    },
+    {
+      id: 3,
+      title: "我的第三篇文章",
+      datetime: "July 01, 2021 11:17:36 AM",
+      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
+    },
+    {
+      id: 4,
+      title: "我的第四篇文章",
+      datetime: "July 01, 2021 11:17:36 AM",
+      body: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quis consequatur expedita, assumenda similique non optio! Modi nesciunt excepturi corrupti atque blanditiis quo nobis, non optio quae possimus illum exercitationem ipsa!"
+    }
+  ])
+  const [search, setSearch] = useState('') // 搜尋
+  const [searchResults, setSearchResults] = useState([]) // 搜尋結果
+  const [postTitle, setPostTitle] = useState('') // 新增文章標題
+  const [postBody, setPostBody] = useState('') // 新增文章內容
+  const navigate = useNavigate() // 使用導航瀏覽歷史紀錄，進行跳頁
+  // 使用效應監聽
   useEffect(() => {
-    setPosts(data)
-  }, [data, setPosts])
-
+    // 數據篩選 標題與內容
+    const filteredResults = posts.filter((post) =>
+      ((post.body).toLowerCase()).includes(search.toLowerCase())
+      || ((post.title).toLowerCase()).includes(search.toLowerCase()))
+    // 設置搜尋結果狀態 數據反向排序
+    setSearchResults(filteredResults.reverse())
+  }, [posts, search])
+  // 新增
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    // const id = posts.length ? posts[posts.length - 1].id + 1 : 1
+    const id = new Date().getTime()
+    const datetime = format(new Date(), 'MMMM dd, yyyy pp')
+    const newPost = { id, title: postTitle, datetime, body: postBody }
+    const allPosts = [...posts, newPost]
+    setPosts(allPosts)
+    setPostTitle('')
+    setPostBody('')
+    navigate('/')
+  }
+  // 刪除
+  const handleDelete = (id) => {
+    const postsList = posts.filter(post => post.id !== id)
+    setPosts(postsList)
+    navigate('/')
+  }
   return (
     <div>
       <div className='title'>
         <div>React Router v6 路由</div>
-        <div>axios 請求：get 獲取、post 發送 新增、put 放置 更新、delete 刪除</div>
-        <div>Easy Peasy v5 十分簡單狀態管理</div>
+        <div>Route index 首頁</div>
+        <div>Outlet 插座，意思是在於頁首與頁尾之間的內容區塊</div>
       </div>
       <div className='demo-box'>
         <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home
-              isLoading={isLoading}
-              fetchError={fetchError}
-            />} />
+          <Route path="/" element={<Layout
+            search={search}
+            setSearch={setSearch}
+          />}>
+            <Route index element={<Home posts={searchResults} />} />
             <Route path="post">
-              <Route index element={<NewPost />} />
-              {/* <Route path="/post/:id" element={<PostPage />} /> */}
-              <Route path=":id" element={<PostPage />} />
+              <Route index element={<NewPost
+                handleSubmit={handleSubmit}
+                postTitle={postTitle}
+                setPostTitle={setPostTitle}
+                postBody={postBody}
+                setPostBody={setPostBody}
+              />} />
+              {/* <Route path="/post/:id" element={<PostPage
+                posts={posts}
+                handleDelete={handleDelete}
+              />} /> */}
+              <Route path=":id" element={<PostPage
+                posts={posts}
+                handleDelete={handleDelete}
+              />} />
             </Route>
-            <Route path="/edit/:id" element={<EditPost />} />
             <Route path="about" element={<About />} />
             <Route path="*" element={<Missing />} />
           </Route>
         </Routes>
       </div>
-    </div>
+    </div>    
   )
 }
 

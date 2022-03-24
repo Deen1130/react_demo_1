@@ -1,13 +1,8 @@
-import { useStoreState } from 'easy-peasy'
-
 const Footer = () => {
-  
-  // 使用狀態管理的狀態
-  const postCount = useStoreState((state) => state.postCount)
-
+  const today = new Date()
   return (
     <footer className='Footer'>
-      <div>共 {postCount} 篇文章</div>
+      <p>Copyright &copy; {today.getFullYear()}</p>
     </footer>
   )
 }
